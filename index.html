@@ -1,0 +1,889 @@
+<!DOCTYPE html><script type="application/json" id="cowork-artifact-meta">
+{
+  "name": "Übungssammlung",
+  "schemaVersion": 1,
+  "description": "Geteilte Tennis-Übungssammlung: Einzelübungen und ganze Stunden-Bausteine, sortiert nach Typ (Aufwärmen/Korbübung/Übung/Spielform), Ballstufe (rot/orange/grün/gelb), Zielgruppe (Jugend/Herren) und Spielstärke. Mit Zielzonen-Skizze pro Übung. Für alle Trainer editierbar, Abgleich über GitHub.",
+  "mcpTools": [],
+  "mcpServerNames": []
+}
+</script>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0f1115">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Übungssammlung">
+<title>Übungssammlung</title>
+<link rel="apple-touch-icon" href="icon-uebungssammlung.png">
+<link rel="icon" type="image/png" href="icon-uebungssammlung.png">
+<style>
+:root{
+  --bg:#0f1115; --bg2:#14171d; --panel:#171a20; --panel2:#1d212a; --panel3:#232833;
+  --line:#262b33; --line2:#333a45;
+  --text:#e8eaed; --dim:#98a1af; --faint:#5b6472;
+  --accent:#4a9eff; --accent-dim:rgba(74,158,255,.14);
+  --danger:#e5484d;
+  --court:#356b45; --courtline:#eaf2ec;
+  --r:12px; --r-lg:18px;
+  --f:-apple-system,BlinkMacSystemFont,'Segoe UI','Helvetica Neue',sans-serif;
+  --shadow:0 6px 24px rgba(0,0,0,.4);
+}
+[data-theme=light]{
+  --bg:#f4f5f7; --bg2:#eceef1; --panel:#ffffff; --panel2:#f7f8fa; --panel3:#eef0f3;
+  --line:#e2e5ea; --line2:#d2d7de;
+  --text:#1a1d23; --dim:#5c6472; --faint:#8b93a1;
+  --accent:#2f7fe0; --court:#3f8a55;
+  --shadow:0 6px 20px rgba(20,25,40,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--text);font-family:var(--f)}
+body{padding-bottom:120px;line-height:1.45;overscroll-behavior-y:none}
+button{font-family:inherit;color:inherit;cursor:pointer;border:0;background:none}
+input,textarea,select{font-family:inherit;font-size:16px;color:var(--text)}
+textarea{resize:none;overflow:hidden}
+::placeholder{color:var(--faint)}
+.hidden{display:none!important}
+
+#topbar{position:sticky;top:0;z-index:30;background:var(--bg);
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:10px}
+.brand{font-weight:700;font-size:17px;white-space:nowrap}
+.brand .b-ico{margin-right:6px}
+#menuBtn{font-size:22px;width:40px;height:40px;border-radius:10px;line-height:1}
+#menuBtn:active{background:var(--panel2)}
+#syncDot{margin-left:auto;width:10px;height:10px;border-radius:50%;background:var(--faint);flex:none;cursor:pointer}
+#syncDot[data-s=idle]{background:var(--dim)}
+#syncDot[data-s=ok]{background:#38b36b}
+#syncDot[data-s=busy]{background:#e5b53a;animation:pulse 1s infinite}
+#syncDot[data-s=err]{background:var(--danger)}
+@keyframes pulse{50%{opacity:.3}}
+
+.tabs{display:flex;gap:8px;padding:10px 14px 0;max-width:1100px;margin:0 auto}
+.tabs button{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--dim);font-weight:600;font-size:14px}
+.tabs button.on{color:var(--text);border-color:var(--accent);background:var(--accent-dim)}
+
+#searchWrap{position:relative;padding:10px 14px 0;max-width:1100px;margin:0 auto}
+#search{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 34px 10px 12px}
+#searchClear{position:absolute;right:22px;top:16px;color:var(--faint);font-size:16px;padding:6px}
+
+.bar{display:flex;gap:8px;padding:10px 14px 2px;max-width:1100px;margin:0 auto;align-items:center}
+.bar button{border:1px solid var(--line);background:var(--panel);border-radius:10px;padding:0 14px;height:40px;font-weight:700;font-size:13.5px;white-space:nowrap;color:var(--dim)}
+.bar .add{border-color:var(--accent);color:var(--accent)}
+.bar button:active{background:var(--panel2)}
+
+.facet-row{display:flex;gap:6px;overflow-x:auto;padding:8px 14px 0;max-width:1100px;margin:0 auto;scrollbar-width:none}
+.facet-row::-webkit-scrollbar{display:none}
+.fchip{flex:none;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel);color:var(--dim);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.fchip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.balldot{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+
+#list{padding:12px 14px 40px;max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr;gap:10px}
+.type-head{font-size:11px;font-weight:800;letter-spacing:1.4px;text-transform:uppercase;color:var(--faint);margin:16px 4px 2px;grid-column:1/-1}
+.type-head:first-child{margin-top:0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-lg);padding:13px 14px;cursor:pointer}
+.card .c-row1{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.card .c-name{font-weight:700;font-size:15px;flex:1;min-width:120px}
+.tchip{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;padding:3px 8px;border-radius:999px;background:var(--panel3);color:var(--dim)}
+.card .c-balls{display:flex;gap:4px;align-items:center;margin-top:7px}
+.card .c-sub{margin-top:5px;font-size:12px;color:var(--faint)}
+.card .c-desc{color:var(--dim);font-size:13.5px;margin-top:6px;white-space:pre-wrap}
+.card .c-tags{margin-top:6px;display:flex;gap:5px;flex-wrap:wrap}
+.card .c-tags span{font-size:11px;color:var(--faint);background:var(--panel3);padding:2px 7px;border-radius:999px}
+.card .c-steps{margin-top:7px;font-size:12.5px;color:var(--dim)}
+.card .c-meta{margin-top:6px;font-size:11px;color:var(--faint)}
+.court-thumb{width:132px;height:auto;border-radius:8px;margin-top:9px;background:#12331f;display:block}
+.empty{text-align:center;color:var(--faint);font-size:14px;padding:50px 20px;line-height:1.7}
+
+.sheet{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center}
+.sheet-bg{position:absolute;inset:0;background:rgba(0,0,0,.5)}
+.sheet-panel{position:relative;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;background:var(--panel);border-radius:20px 20px 0 0;padding:18px 18px calc(env(safe-area-inset-bottom) + 24px);box-shadow:var(--shadow)}
+.sheet-panel h2{font-size:16px;margin-bottom:4px}
+.sheet-panel .sub{color:var(--dim);font-size:13px;margin-bottom:14px}
+.sheet-grp{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
+.sheet-btn{width:100%;text-align:left;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:10px}
+.sheet-btn:active{background:var(--panel3)}
+.sheet-btn .em{font-size:18px}
+.sheet-btn small{display:block;font-weight:400;color:var(--dim);font-size:12px;margin-top:2px}
+.sheet-close{display:block;width:100%;margin-top:12px;padding:12px;color:var(--dim);font-size:14px;font-weight:600}
+.primary{justify-content:center;color:var(--accent);border-color:var(--accent)}
+.danger{justify-content:center;color:var(--danger)}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:11px;letter-spacing:.5px;text-transform:uppercase;color:var(--faint);margin-bottom:5px}
+.field input,.field textarea,.field select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 11px;font-size:15px}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--line2)}
+.cts{display:flex;flex-wrap:wrap;gap:6px}
+.ct{font-size:12.5px;font-weight:600;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);display:inline-flex;align-items:center;gap:7px}
+.ct.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.ct i{width:11px;height:11px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.3)}
+.toggle-row{display:flex;align-items:center;gap:10px;background:var(--panel2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;margin-bottom:8px}
+.toggle-row input{width:20px;height:20px}
+.tips code,.toggle-row code{background:var(--panel3);padding:1px 4px;border-radius:4px;font-size:12px}
+.tips{font-size:13.5px;line-height:1.7;color:var(--dim)}
+.tips b{color:var(--text)} .tips ul{margin:6px 0 12px 18px}
+.cf-status{font-size:12px;color:var(--dim);margin:8px 2px}
+
+.step{display:flex;align-items:flex-start;gap:6px;padding:3px 0}
+.step .s-grp{width:100px;flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 6px;font-size:12px;color:var(--dim)}
+.step .s-txt{flex:1;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+.step .s-min{width:48px;flex:none;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 4px;font-size:12px;text-align:center}
+.step .s-x{color:var(--faint);font-size:14px;padding:6px 4px}
+.step-add{border:1px dashed var(--line2);background:none;border-radius:9px;padding:9px;color:var(--dim);font-size:13px;font-weight:600;width:100%;margin-top:4px}
+
+/* Zielzonen-Skizze */
+.court{width:100%;aspect-ratio:260/120;height:auto;display:block;border-radius:10px;background:#10301d;touch-action:none}
+.court-thumb{aspect-ratio:260/120}
+.court-wrap{border:1px solid var(--line);border-radius:12px;padding:10px;background:var(--panel2)}
+.court-tools{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.court-tools button{font-size:12px;font-weight:600;padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--dim)}
+.court-tools button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.court-hint{font-size:11px;color:var(--faint);margin-top:7px}
+
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);z-index:80;background:var(--panel3);border:1px solid var(--line2);color:var(--text);padding:10px 16px;border-radius:999px;font-size:13px;font-weight:600;opacity:0;pointer-events:none;transition:.25s;box-shadow:var(--shadow)}
+#toast.show{opacity:1}
+
+@media(min-width:640px){ #list{grid-template-columns:1fr 1fr} }
+@media(min-width:980px){ #list{grid-template-columns:1fr 1fr 1fr} }
+</style>
+</head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><span class="b-ico">🎾</span>Übungssammlung</div>
+  <span id="syncDot" data-s="off" title="Cloud-Sync"></span>
+  <button id="menuBtn" aria-label="Menü">⋯</button>
+</header>
+
+<div class="tabs" id="tabs">
+  <button data-v="exercises" class="on">Einzelübungen</button>
+  <button data-v="blueprints">Stunden-Bausteine</button>
+</div>
+
+<div id="searchWrap">
+  <input id="search" type="search" autocomplete="off" placeholder="Suchen – Name, Schwerpunkt, Text…">
+  <button id="searchClear" class="hidden">✕</button>
+</div>
+
+<div class="bar">
+  <button class="add" id="addBtn">＋ Neu</button>
+  <button id="filterBtn">⛃ Filter</button>
+</div>
+<div class="facet-row" id="typeBar"></div>
+<div class="facet-row" id="ballBar"></div>
+
+<main id="list"></main>
+
+<div id="sheet" class="sheet hidden"><div class="sheet-bg"></div><div class="sheet-panel" id="sheetPanel"></div></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+/* ============================================================
+   Übungssammlung — reines Tennis. Einzeldatei, offline-fähig.
+   Klassifikation:
+     Typ    : Aufwärmen / Korbübung / Übung / Spielform
+     Ball   : rot / orange / grün / gelb (DTB-Ballstufen)
+     Gruppe : Jugend / Herren
+     Stärke : Anfänger / Mittel / Hoch
+   Dazu: freie Schwerpunkte (Tags) und eine Zielzonen-Skizze.
+   Eigene GitHub-Cloud (us_*), unabhängig von der Planungs-App.
+   ============================================================ */
+const KEY = "uebungssammlung:v2";
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>[...r.querySelectorAll(s)];
+const uid = ()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const esc = s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("show");clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove("show"),2200);}
+const splitTags = s => String(s||"").split(",").map(x=>x.trim()).filter(Boolean);
+
+const TYPES  = [["aufwaermen","Aufwärmen"],["korb","Korbübung"],["uebung","Übung"],["spielform","Spielform"]];
+const BALLS  = [["rot","Rot","#e5484d"],["orange","Orange","#f0883e"],["gruen","Grün","#3aae5a"],["gelb","Gelb · normal","#e6c92e"]];
+const AUD    = [["jugend","Jugend"],["herren","Herren"]];
+const LEVELS = [["anfaenger","Anfänger"],["mittel","Mittel"],["hoch","Hoch"]];
+const label  = (arr,v)=>{ const e=arr.find(x=>x[0]===v); return e?e[1]:v; };
+const ballColor = v => (BALLS.find(b=>b[0]===v)||[])[2] || "#888";
+
+function seed(){
+  const A=Date.now();
+  const E=(name,type,balls,aud,levels,tags,desc,min,court)=>(
+    {id:uid(),name,type,balls,aud,levels,tags,desc,durationMin:min||"",court:court||null,updatedAt:A,author:""});
+  return {
+    v:2,
+    settings:{theme:"dark", view:"exercises", type:"alle", balls:[], aud:[], levels:[], tags:[]},
+    tomb:{exercise:{}, blueprint:{}},
+    exercises:[
+      E("Königsspiel / King of the Court","aufwaermen",["gelb","gruen"],["jugend","herren"],["anfaenger","mittel","hoch"],["Spielverständnis"],
+        "Aufwärmen als Wettkampf: Gewinner bleibt auf der „Königsseite“, alle anderen fordern.",10),
+      E("Mini-Tennis in den Aufschlagfeldern","aufwaermen",["rot","orange"],["jugend"],["anfaenger"],["Ballgefühl","Kontrolle"],
+        "Nur in den vier Aufschlagfeldern, weiche Bälle, Fokus auf Treffpunkt vor dem Körper.",8),
+      E("Vorhand longline aus dem Korb","korb",["gelb","gruen","orange"],["jugend","herren"],["anfaenger","mittel"],["Vorhand","Kontrolle"],
+        "Trainer füttert aus dem Korb, Spieler schlägt Vorhand die Linie entlang in die Zielzone.",12,
+        {els:[{t:"zone",x:0.86,y:0.16},{t:"arrow",x1:0.30,y1:0.30,x2:0.84,y2:0.16}]}),
+      E("Aufschlag auf Zonen (Korb)","korb",["gelb"],["herren","jugend"],["mittel","hoch"],["Aufschlag","Taktik"],
+        "Serienweise auf Außen, Körper, T. Punkte für getroffene Zone.",15,
+        {els:[{t:"zone",x:0.06,y:0.10},{t:"zone",x:0.06,y:0.42},{t:"note",x:0.06,y:0.72,s:"T / Körper / außen"}]}),
+      E("Rückhand cross – Tempo steigern","korb",["gelb","gruen"],["jugend","herren"],["mittel","hoch"],["Rückhand"],
+        "5 kontrollierte, dann 5 mit mehr Tempo, gleiche Zielzone halten.",10),
+      E("Cross → longline auf Kommando","uebung",["gelb","gruen"],["jugend","herren"],["mittel","hoch"],["Grundschläge","Beinarbeit"],
+        "Diagonal spielen; ruft der Trainer „Linie“, wechselt der offene Spieler longline und es wird frei ausgespielt.",12,
+        {els:[{t:"arrow",x1:0.28,y1:0.24,x2:0.72,y2:0.78},{t:"arrow",x1:0.28,y1:0.24,x2:0.72,y2:0.20},{t:"zone",x:0.78,y:0.18}]}),
+      E("Aufschlag + 1","uebung",["gelb"],["herren","jugend"],["mittel","hoch"],["Aufschlag","Taktik"],
+        "Aufschlag nach Plan, erster Ball Vorhand inside-out, dann frei.",12),
+      E("Return blocken","uebung",["gelb","gruen"],["jugend","herren"],["anfaenger","mittel","hoch"],["Return"],
+        "Kein Ausholen, nur blocken, tief in die Mitte. Später auf Zonen.",8),
+      E("Stopp & Lob","uebung",["gelb","gruen"],["jugend","herren"],["mittel","hoch"],["Netzspiel","Anti-Netz"],
+        "Ein Spieler am Netz, der andere spielt abwechselnd Stopp und Lob. Rollen tauschen.",10),
+      E("2 gegen 1","spielform",["gelb","gruen"],["jugend","herren"],["mittel","hoch"],["Laufarbeit","Platzierung"],
+        "Einzelner verteidigt, Paar spielt platziert. Nach 6 Bällen oder Punkt Wechsel.",12),
+      E("Aufschlagspiele bis 11","spielform",["gelb"],["herren"],["mittel","hoch"],["Aufschlag","Wettkampf"],
+        "Kurze Sätze bis 11, jeder Fehler beim ersten Aufschlag = Extrapunkt für den Gegner.",15),
+      E("Punkt ab drittem Ball","spielform",["gruen","gelb"],["jugend"],["anfaenger","mittel"],["Rally","Sicherheit"],
+        "Die ersten zwei Bälle müssen sicher cross, danach frei. Zählt nur, wenn beide Sicherheitsbälle im Feld waren.",12)
+    ],
+    blueprints:[
+      {id:uid(),name:"Grüne Bälle · Grundschläge 60'",type:"uebung",balls:["gruen"],aud:["jugend"],levels:["anfaenger","mittel"],
+       tags:["Vorhand","Rückhand"],note:"6–8 Kinder, 2 Trainer, 1 Korb.",durationMin:60,updatedAt:A,author:"",court:null,
+       items:[
+        {id:uid(),text:"Königsspiel Mini-Feld",group:"Aufwärmen",durationMin:8},
+        {id:uid(),text:"Vorhand longline aus dem Korb, Zielzone tief",group:"Korbübung",durationMin:12},
+        {id:uid(),text:"Rückhand cross aus dem Korb",group:"Korbübung",durationMin:12},
+        {id:uid(),text:"Cross-Rally zu zweit, 10 am Stück",group:"Übung",durationMin:12},
+        {id:uid(),text:"Punkt ab drittem Ball",group:"Spielform",durationMin:12},
+        {id:uid(),text:"Abschlussspiel + kurze Rückmeldung",group:"Ausklang",durationMin:4}
+       ]},
+      {id:uid(),name:"Herren Mittel · Aufschlag & Return 90'",type:"uebung",balls:["gelb"],aud:["herren"],levels:["mittel","hoch"],
+       tags:["Aufschlag","Return","Taktik"],note:"3–4 Spieler.",durationMin:90,updatedAt:A,author:"",court:null,
+       items:[
+        {id:uid(),text:"Einlaufen + Schultermobilisation",group:"Aufwärmen",durationMin:10},
+        {id:uid(),text:"Einschlagen längs, dann cross",group:"Aufwärmen",durationMin:10},
+        {id:uid(),text:"Aufschlag auf Zonen (Korb), Punkte zählen",group:"Korbübung",durationMin:15},
+        {id:uid(),text:"Return blocken auf Zonen",group:"Korbübung",durationMin:10},
+        {id:uid(),text:"Aufschlag + 1 frei",group:"Übung",durationMin:15},
+        {id:uid(),text:"Aufschlagspiele bis 11",group:"Spielform",durationMin:20},
+        {id:uid(),text:"Dehnen + Feedback",group:"Ausklang",durationMin:10}
+       ]},
+      {id:uid(),name:"Orange · Spielformen 45'",type:"spielform",balls:["orange"],aud:["jugend"],levels:["anfaenger"],
+       tags:["Spielverständnis"],note:"Kleinfeld / Mittelfeld.",durationMin:45,updatedAt:A,author:"",court:null,
+       items:[
+        {id:uid(),text:"Fangen & Werfen über das Netz",group:"Aufwärmen",durationMin:8},
+        {id:uid(),text:"Aufschlag von unten in die Box",group:"Korbübung",durationMin:10},
+        {id:uid(),text:"2 gegen 2 im Mittelfeld, Aufschlag von unten",group:"Spielform",durationMin:20},
+        {id:uid(),text:"Königsspiel",group:"Spielform",durationMin:7}
+       ]}
+    ]
+  };
+}
+
+let state = load();
+function load(){
+  try{ const r=localStorage.getItem(KEY); if(r) return ensure(JSON.parse(r));
+       const old=localStorage.getItem("uebungssammlung:v1");
+       if(old){ const s=ensure(JSON.parse(old)); return s; }
+       return seed();
+  }catch(e){ console.warn(e); return seed(); }
+}
+function ensure(s){
+  s.settings = Object.assign({theme:"dark",view:"exercises",type:"alle",balls:[],aud:[],levels:[],tags:[]}, s.settings||{});
+  ["balls","aud","levels","tags"].forEach(k=> s.settings[k] = Array.isArray(s.settings[k])?s.settings[k]:[]);
+  s.exercises ||= []; s.blueprints ||= [];
+  s.tomb = Object.assign({exercise:{},blueprint:{}}, s.tomb||{});
+  s.tomb.exercise ||= {}; s.tomb.blueprint ||= {};
+  const fix = x=>{
+    delete x.area;
+    x.tags = Array.isArray(x.tags)?x.tags:[];
+    x.type = x.type || "uebung";
+    x.balls = Array.isArray(x.balls)&&x.balls.length ? x.balls : ["gelb"];
+    x.aud   = Array.isArray(x.aud)&&x.aud.length ? x.aud : ["herren"];
+    x.levels= Array.isArray(x.levels)&&x.levels.length ? x.levels : ["mittel"];
+    if(!x.court || !Array.isArray(x.court.els)) x.court = x.court ? {els:[]} : null;
+  };
+  s.exercises  = s.exercises.filter(x=>x.area!=="kondition");  s.exercises.forEach(fix);
+  s.blueprints = s.blueprints.filter(x=>x.area!=="kondition"); s.blueprints.forEach(x=>{ fix(x); x.items ||= []; x.items.forEach(i=>i.id ||= uid()); });
+  return s;
+}
+let save_silent=false;
+function save(){
+  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){ toast("Speicher voll – Backup als Datei sichern"); }
+  if(!save_silent) queueCloud();
+}
+const author = ()=>localStorage.getItem("us_author")||"";
+function stamp(o){ o.updatedAt=Date.now(); if(author()) o.author=author(); return o; }
+
+/* ============================================================
+   Zielzonen-Skizze (Tennisplatz von oben, quer)
+   Koordinaten normalisiert 0..1: x = entlang der Länge
+   (0 linke Grundlinie … 1 rechte), y = quer (0 oben … 1 unten),
+   Netz bei x = 0.5.
+   ============================================================ */
+const CX = x => 12 + (isFinite(x)?x:0.5)*236;   // viewBox 260 breit, Rand 12 → Feld 236
+const CY = y => 10 + (isFinite(y)?y:0.5)*100;   // viewBox 120 hoch, Rand 10 → Feld 100
+function courtSVG(court, o={}){
+  const els = (court && court.els) || [];
+  const ah = "ah_"+(o.id||"t");
+  const P=[];
+  P.push(`<rect x="12" y="10" width="236" height="100" fill="var(--court)" stroke="var(--courtline)" stroke-width="1.6"/>`);
+  P.push(`<line x1="130" y1="10" x2="130" y2="110" stroke="var(--courtline)" stroke-width="1.8"/>`);      // Netz
+  P.push(`<line x1="12" y1="22.5" x2="248" y2="22.5" stroke="var(--courtline)" stroke-width="1" opacity=".85"/>`); // Einzel oben
+  P.push(`<line x1="12" y1="97.5" x2="248" y2="97.5" stroke="var(--courtline)" stroke-width="1" opacity=".85"/>`); // Einzel unten
+  P.push(`<line x1="65"  y1="22.5" x2="65"  y2="97.5" stroke="var(--courtline)" stroke-width="1" opacity=".85"/>`);// Aufschlaglinie L
+  P.push(`<line x1="195" y1="22.5" x2="195" y2="97.5" stroke="var(--courtline)" stroke-width="1" opacity=".85"/>`);// Aufschlaglinie R
+  P.push(`<line x1="65"  y1="60" x2="195" y2="60" stroke="var(--courtline)" stroke-width="1" opacity=".85"/>`);   // Mittellinie
+  let n=0;
+  els.forEach(el=>{
+    if(el.t==="zone"){ n++;
+      P.push(`<circle cx="${CX(el.x).toFixed(1)}" cy="${CY(el.y).toFixed(1)}" r="9" fill="var(--accent)" fill-opacity=".30" stroke="var(--accent)" stroke-width="1.6"/>`);
+      P.push(`<text x="${CX(el.x).toFixed(1)}" y="${(CY(el.y)+3.4).toFixed(1)}" text-anchor="middle" font-size="9.5" font-weight="800" fill="#fff">${n}</text>`);
+    } else if(el.t==="arrow"){
+      P.push(`<line x1="${CX(el.x1).toFixed(1)}" y1="${CY(el.y1).toFixed(1)}" x2="${CX(el.x2).toFixed(1)}" y2="${CY(el.y2).toFixed(1)}" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" marker-end="url(#${ah})"/>`);
+    } else if(el.t==="note"){
+      P.push(`<text x="${CX(el.x).toFixed(1)}" y="${CY(el.y).toFixed(1)}" text-anchor="middle" font-size="8.5" font-weight="800" fill="#fff" paint-order="stroke" stroke="#0a2a17" stroke-width="3">${esc(el.s)}</text>`);
+    }
+  });
+  return `<svg viewBox="0 0 260 120" class="court" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet">
+    <defs><marker id="${ah}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>${P.join("")}</svg>`;
+}
+function courtField(court, onChange){
+  if(!court.els) court.els=[];
+  if(!court._id) court._id=uid();
+  const wrap=document.createElement("div"); wrap.className="court-wrap";
+  let mode="zone", pend=null;
+  const HINT={zone:"Aufs Feld tippen = nummerierte Zielzone",arrow:"Startpunkt tippen, dann Zielpunkt = Pfeil (Ballweg)",note:"Tippen und kurzen Text eingeben",erase:"Element antippen zum Entfernen"};
+  function paint(){
+    wrap.innerHTML = `
+      <div class="court-tools">
+        ${[["zone","● Zone"],["arrow","↗ Pfeil"],["note","A Text"],["erase","⌫ Löschen"]].map(([m,l])=>`<button data-m="${m}" class="${m===mode?'on':''}">${l}</button>`).join("")}
+        <button data-a="undo">↶ zurück</button><button data-a="clear">🗑 leeren</button>
+      </div>
+      <div class="court-host">${courtSVG(court,{id:court._id})}</div>
+      <div class="court-hint">${HINT[mode]}${pend?" · Startpunkt gesetzt":""}</div>`;
+    $$('[data-m]',wrap).forEach(b=>b.onclick=()=>{ mode=b.dataset.m; pend=null; paint(); });
+    $('[data-a=undo]',wrap).onclick=()=>{ court.els.pop(); pend=null; onChange(); paint(); };
+    $('[data-a=clear]',wrap).onclick=()=>{ if(court.els.length && !confirm("Skizze komplett leeren?")) return; court.els=[]; pend=null; onChange(); paint(); };
+    const svg=$('svg',wrap);
+    svg.addEventListener('pointerdown',ev=>{
+      ev.preventDefault();
+      const r=svg.getBoundingClientRect();
+      if(!r.width || !r.height) return;
+      let x=((ev.clientX-r.left)/r.width*260 - 12)/236;
+      let y=((ev.clientY-r.top)/r.height*120 - 10)/100;
+      if(!isFinite(x)||!isFinite(y)) return;
+      x=Math.max(0,Math.min(1,x)); y=Math.max(0,Math.min(1,y));
+      if(mode==="zone") court.els.push({t:"zone",x,y});
+      else if(mode==="note"){ const s=prompt("Kurzer Text:"); if(!s) return; court.els.push({t:"note",x,y,s:s.slice(0,20)}); }
+      else if(mode==="arrow"){ if(!pend){ pend={x,y}; } else { court.els.push({t:"arrow",x1:pend.x,y1:pend.y,x2:x,y2:y}); pend=null; } }
+      else if(mode==="erase"){
+        let bi=-1,bd=0.07;
+        court.els.forEach((el,i)=>{ const pts= el.t==="arrow"?[[el.x1,el.y1],[el.x2,el.y2]]:[[el.x,el.y]];
+          pts.forEach(([px,py])=>{ const d=Math.hypot(px-x,py-y); if(d<bd){ bd=d; bi=i; } }); });
+        if(bi>=0) court.els.splice(bi,1);
+      }
+      onChange(); paint();
+    });
+  }
+  paint();
+  return wrap;
+}
+
+/* ---------- Render ---------- */
+const listEl=$("#list");
+function currentList(){ return state.settings.view==="blueprints" ? state.blueprints : state.exercises; }
+function allTags(){
+  const set=new Set(); currentList().forEach(x=>(x.tags||[]).forEach(t=>set.add(t)));
+  return [...set].sort((a,b)=>a.localeCompare(b));
+}
+function visible(){
+  const f=state.settings;
+  const q=($("#search").value||"").trim().toLowerCase();
+  return currentList().filter(x=>{
+    if(f.type!=="alle" && x.type!==f.type) return false;
+    if(f.balls.length  && !f.balls.some(b=>(x.balls||[]).includes(b))) return false;
+    if(f.aud.length    && !f.aud.some(a=>(x.aud||[]).includes(a))) return false;
+    if(f.levels.length && !f.levels.some(l=>(x.levels||[]).includes(l))) return false;
+    if(f.tags.length   && !f.tags.some(t=>(x.tags||[]).includes(t))) return false;
+    if(q){
+      const hay=[x.name,x.desc,x.note,(x.tags||[]).join(" "),(x.items||[]).map(i=>i.text).join(" ")].join(" ").toLowerCase();
+      if(!hay.includes(q)) return false;
+    }
+    return true;
+  }).sort((a,b)=>a.name.localeCompare(b.name));
+}
+function facetRow(host, opts, cur, onPick, colored){
+  host.innerHTML="";
+  opts.forEach(([v,l,c])=>{
+    const b=document.createElement("button"); b.className="fchip"+(v===cur?" on":"");
+    b.innerHTML = colored&&c ? `<i class="balldot" style="background:${c}"></i>${l}` : l;
+    b.onclick=()=>onPick(v);
+    host.appendChild(b);
+  });
+}
+function render(){
+  const f=state.settings;
+  document.documentElement.dataset.theme=f.theme;
+  $$("#tabs button").forEach(b=>b.classList.toggle("on",b.dataset.v===f.view));
+  $("#searchClear").classList.toggle("hidden", !$("#search").value);
+  $("#addBtn").textContent = f.view==="blueprints" ? "＋ Baustein" : "＋ Übung";
+  const nb = f.balls.length+f.aud.length+f.levels.length+f.tags.length;
+  $("#filterBtn").textContent = "⛃ Filter" + (nb?` (${nb})`:"");
+  $("#filterBtn").style.color = nb ? "var(--accent)" : "";
+
+  facetRow($("#typeBar"), [["alle","alle Typen"],...TYPES], f.type, v=>{ f.type=v; save(); render(); });
+  // Ball-Zeile: Mehrfachauswahl -> aktiv = in f.balls
+  const bh=$("#ballBar"); bh.innerHTML="";
+  const allB=document.createElement("button"); allB.className="fchip"+(f.balls.length?"":" on"); allB.textContent="alle Bälle";
+  allB.onclick=()=>{ f.balls=[]; save(); render(); }; bh.appendChild(allB);
+  BALLS.forEach(([v,l,c])=>{
+    const b=document.createElement("button"); b.className="fchip"+(f.balls.includes(v)?" on":"");
+    b.innerHTML=`<i class="balldot" style="background:${c}"></i>${l}`;
+    b.onclick=()=>{ const i=f.balls.indexOf(v); i>=0?f.balls.splice(i,1):f.balls.push(v); save(); render(); };
+    bh.appendChild(b);
+  });
+
+  const items=visible();
+  listEl.innerHTML="";
+  if(!items.length){
+    const e=document.createElement("div"); e.className="empty";
+    e.innerHTML = (f.view==="blueprints"?"Keine Stunden-Bausteine":"Keine Übungen")+" für diesen Filter.<br>"+
+      (nb||f.type!=="alle" ? "Filter lockern oder " : "")+"Tippe auf <b>"+(f.view==="blueprints"?"＋ Baustein":"＋ Übung")+"</b>.";
+    listEl.appendChild(e); return;
+  }
+  const mk = f.view==="blueprints" ? bpCard : exCard;
+  if(f.type==="alle"){
+    TYPES.forEach(([tv,tl])=>{
+      const grp=items.filter(x=>x.type===tv);
+      if(!grp.length) return;
+      const h=document.createElement("div"); h.className="type-head"; h.textContent=tl+" · "+grp.length;
+      listEl.appendChild(h);
+      grp.forEach(x=>listEl.appendChild(mk(x)));
+    });
+  } else {
+    items.forEach(x=>listEl.appendChild(mk(x)));
+  }
+}
+function facetLine(x){
+  return [x.aud.map(a=>label(AUD,a)).join(" / "), x.levels.map(l=>label(LEVELS,l)).join(" / ")].filter(Boolean).join("  ·  ");
+}
+function ballDots(x){ return (x.balls||[]).map(b=>`<span class="balldot" style="background:${ballColor(b)}" title="${esc(label(BALLS,b))}"></span>`).join(""); }
+function exCard(x){
+  const el=document.createElement("div"); el.className="card";
+  el.innerHTML=`
+    <div class="c-row1"><span class="c-name">${esc(x.name)}</span>
+      <span class="tchip">${esc(label(TYPES,x.type))}</span>
+      ${x.durationMin?`<span class="c-meta" style="margin:0">${x.durationMin}′</span>`:""}</div>
+    <div class="c-balls">${ballDots(x)}<span class="c-sub" style="margin:0 0 0 4px">${esc(facetLine(x))}</span></div>
+    ${x.desc?`<div class="c-desc">${esc(x.desc)}</div>`:""}
+    ${(x.tags||[]).length?`<div class="c-tags">${x.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div>`:""}
+    ${x.court&&x.court.els&&x.court.els.length?`<div>${courtSVG(x.court,{id:"c"+x.id}).replace('class="court"','class="court court-thumb"')}</div>`:""}
+    ${x.author?`<div class="c-meta">von ${esc(x.author)}</div>`:""}`;
+  el.onclick=()=>exEditor(x);
+  return el;
+}
+function bpCard(x){
+  const el=document.createElement("div"); el.className="card";
+  const total = (x.items||[]).reduce((n,i)=>n+(+i.durationMin||0),0) || x.durationMin;
+  el.innerHTML=`
+    <div class="c-row1"><span class="c-name">${esc(x.name)}</span>
+      <span class="tchip">${esc(label(TYPES,x.type))}</span>
+      <span class="c-meta" style="margin:0">${total?total+"′ · ":""}${(x.items||[]).length} Schritte</span></div>
+    <div class="c-balls">${ballDots(x)}<span class="c-sub" style="margin:0 0 0 4px">${esc(facetLine(x))}</span></div>
+    ${x.note?`<div class="c-desc">${esc(x.note)}</div>`:""}
+    ${(x.tags||[]).length?`<div class="c-tags">${x.tags.map(t=>`<span>${esc(t)}</span>`).join("")}</div>`:""}
+    <div class="c-steps">${(x.items||[]).slice(0,6).map(i=>`• ${esc(i.text)}`).join("<br>")}${(x.items||[]).length>6?"<br>…":""}</div>
+    ${x.court&&x.court.els&&x.court.els.length?`<div>${courtSVG(x.court,{id:"c"+x.id}).replace('class="court"','class="court court-thumb"')}</div>`:""}
+    ${x.author?`<div class="c-meta">von ${esc(x.author)}</div>`:""}`;
+  el.onclick=()=>bpEditor(x);
+  return el;
+}
+
+/* ---------- Sheets ---------- */
+const sheet=$("#sheet"), sheetPanel=$("#sheetPanel");
+$(".sheet-bg",sheet).onclick=closeSheet;
+function openSheet(html){ sheetPanel.innerHTML=html; sheet.classList.remove("hidden"); sheetPanel.scrollTop=0; }
+function closeSheet(){ sheet.classList.add("hidden"); sheetPanel.innerHTML=""; }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape" && !sheet.classList.contains("hidden")) closeSheet(); });
+
+function multiChips(host, opts, selected){
+  host.innerHTML="";
+  opts.forEach(([v,l,c])=>{
+    const b=document.createElement("button"); b.type="button";
+    b.className="ct"+(selected.includes(v)?" on":"");
+    b.innerHTML = c?`<i style="background:${c}"></i>${l}`:l;
+    b.onclick=()=>{ const i=selected.indexOf(v); i>=0?selected.splice(i,1):selected.push(v); multiChips(host,opts,selected); };
+    host.appendChild(b);
+  });
+}
+
+function filterSheet(){
+  const f=state.settings;
+  openSheet(`<h2>Filter</h2>
+    <div class="sub">Mehrfachauswahl je Zeile. Leer = alles.</div>
+    <div class="field"><label>Ballstufe</label><div id="fB" class="cts"></div></div>
+    <div class="field"><label>Zielgruppe</label><div id="fA" class="cts"></div></div>
+    <div class="field"><label>Spielstärke</label><div id="fL" class="cts"></div></div>
+    <div class="field"><label>Schwerpunkt</label><div id="fT" class="cts"></div></div>
+    <button class="sheet-btn" id="fReset" style="justify-content:center">Alle Filter zurücksetzen</button>
+    <button class="sheet-close">Fertig</button>`);
+  const upd=()=>{ save(); render(); };
+  const wrap=(host,opts,sel)=>{ multiChips(host,opts,sel);
+    host.addEventListener("click",()=>setTimeout(upd,0), {once:false}); };
+  wrap($("#fB",sheetPanel), BALLS, f.balls);
+  wrap($("#fA",sheetPanel), AUD, f.aud);
+  wrap($("#fL",sheetPanel), LEVELS, f.levels);
+  const tagOpts = allTags().map(t=>[t,t]);
+  if(tagOpts.length) wrap($("#fT",sheetPanel), tagOpts, f.tags);
+  else $("#fT",sheetPanel).innerHTML='<span class="cf-status">— noch keine Schwerpunkte —</span>';
+  $("#fReset",sheetPanel).onclick=()=>{ f.balls=[];f.aud=[];f.levels=[];f.tags=[]; upd(); filterSheet(); };
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+
+function facetFields(x){
+  return `
+    <div class="field"><label>Typ</label><select id="fType">
+      ${TYPES.map(([v,l])=>`<option value="${v}"${x.type===v?" selected":""}>${l}</option>`).join("")}</select></div>
+    <div class="field"><label>Ballstufe</label><div id="eB" class="cts"></div></div>
+    <div class="field"><label>Zielgruppe</label><div id="eA" class="cts"></div></div>
+    <div class="field"><label>Spielstärke</label><div id="eL" class="cts"></div></div>`;
+}
+function wireFacets(x){
+  multiChips($("#eB",sheetPanel), BALLS, x.balls);
+  multiChips($("#eA",sheetPanel), AUD, x.aud);
+  multiChips($("#eL",sheetPanel), LEVELS, x.levels);
+  $("#fType",sheetPanel).onchange=e=>x.type=e.target.value;
+}
+
+function exEditor(x){
+  const isNew=!x;
+  x = x ? JSON.parse(JSON.stringify(x)) : {id:uid(),name:"",type:state.settings.type!=="alle"?state.settings.type:"uebung",balls:["gelb"],aud:["herren"],levels:["mittel"],tags:[],desc:"",durationMin:"",court:null,updatedAt:0,author:""};
+  x.court = x.court || {els:[]};
+  openSheet(`
+    <h2>${isNew?"Neue Übung":"Übung bearbeiten"}</h2>
+    <div class="field"><label>Name</label><input id="eName" value="${esc(x.name)}" placeholder="z. B. Cross mit Zielzonen"></div>
+    ${facetFields(x)}
+    <div class="field"><label>Schwerpunkte (mit Komma)</label><input id="eTags" value="${esc((x.tags||[]).join(", "))}" placeholder="Vorhand, Taktik"></div>
+    <div class="field"><label>Beschreibung</label><textarea id="eDesc" rows="4" placeholder="Ablauf, Coaching-Punkte, Dosierung…">${esc(x.desc||"")}</textarea></div>
+    <div class="field"><label>Dauer (min, optional)</label><input id="eMin" type="number" inputmode="numeric" value="${x.durationMin||""}"></div>
+    <div class="field"><label>Zielzonen-Skizze</label><div id="eCourt"></div></div>
+    <div class="sheet-grp">
+      <button class="sheet-btn primary" id="eSave">${isNew?"Anlegen":"Speichern"}</button>
+      ${isNew?"":'<button class="sheet-btn danger" id="eDel">Löschen</button>'}
+    </div>
+    <button class="sheet-close">Abbrechen</button>`);
+  wireFacets(x);
+  $("#eCourt",sheetPanel).appendChild(courtField(x.court, ()=>{}));
+  const ta=$("#eDesc",sheetPanel); const fit=()=>{ta.style.height="auto";ta.style.height=ta.scrollHeight+"px";}; ta.oninput=fit; requestAnimationFrame(fit);
+  $("#eSave",sheetPanel).onclick=()=>{
+    const name=$("#eName",sheetPanel).value.trim(); if(!name){ toast("Name fehlt"); return; }
+    x.name=name;
+    x.tags=splitTags($("#eTags",sheetPanel).value);
+    x.desc=$("#eDesc",sheetPanel).value.trim();
+    x.durationMin=parseInt($("#eMin",sheetPanel).value)||"";
+    if(!x.balls.length) x.balls=["gelb"];
+    if(!x.aud.length) x.aud=["herren"];
+    if(!x.levels.length) x.levels=["mittel"];
+    x.court = (x.court.els && x.court.els.length) ? {els:x.court.els} : null;
+    stamp(x);
+    const i=state.exercises.findIndex(e=>e.id===x.id);
+    if(i<0) state.exercises.push(x); else state.exercises[i]=x;
+    save(); render(); closeSheet(); toast(isNew?"Übung angelegt":"Gespeichert");
+  };
+  if(!isNew) $("#eDel",sheetPanel).onclick=()=>{
+    if(!confirm("Übung löschen?")) return;
+    state.tomb.exercise[x.id]=Date.now();
+    state.exercises=state.exercises.filter(y=>y.id!==x.id);
+    save(); render(); closeSheet();
+  };
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+
+function bpEditor(x){
+  const isNew=!x;
+  x = x ? JSON.parse(JSON.stringify(x)) : {id:uid(),name:"",type:state.settings.type!=="alle"?state.settings.type:"uebung",balls:["gelb"],aud:["herren"],levels:["mittel"],tags:[],note:"",durationMin:"",items:[],court:null,updatedAt:0,author:""};
+  x.court = x.court || {els:[]};
+  const drawSteps=()=>{
+    const host=$("#bpSteps",sheetPanel); host.innerHTML="";
+    x.items.forEach((it,idx)=>{
+      const row=document.createElement("div"); row.className="step";
+      row.innerHTML=`<input class="s-grp" value="${esc(it.group||"")}" placeholder="Block">
+        <input class="s-txt" value="${esc(it.text||"")}" placeholder="Übung / Schritt">
+        <input class="s-min" type="number" inputmode="numeric" value="${it.durationMin||""}" placeholder="min">
+        <button class="s-x">✕</button>`;
+      $(".s-grp",row).oninput=e=>it.group=e.target.value;
+      $(".s-txt",row).oninput=e=>it.text=e.target.value;
+      $(".s-txt",row).onkeydown=e=>{ if(e.key==="Enter"){ e.preventDefault(); x.items.splice(idx+1,0,{id:uid(),text:"",group:it.group||"",durationMin:""}); drawSteps(); $$(".s-txt",host)[idx+1]?.focus(); } };
+      $(".s-min",row).oninput=e=>it.durationMin=parseInt(e.target.value)||"";
+      $(".s-x",row).onclick=()=>{ x.items.splice(idx,1); drawSteps(); };
+      host.appendChild(row);
+    });
+    const total=x.items.reduce((n,i)=>n+(+i.durationMin||0),0);
+    $("#bpTotal",sheetPanel).textContent = total?("Summe ≈ "+total+" min"):"";
+  };
+  openSheet(`
+    <h2>${isNew?"Neuer Stunden-Baustein":"Baustein bearbeiten"}</h2>
+    <div class="field"><label>Name</label><input id="bName" value="${esc(x.name)}" placeholder="z. B. Grüne Bälle · Grundschläge 60'"></div>
+    ${facetFields(x)}
+    <div class="field"><label>Schwerpunkte (mit Komma)</label><input id="bTags" value="${esc((x.tags||[]).join(", "))}"></div>
+    <div class="field"><label>Notiz (Teilnehmerzahl, Material, Niveau…)</label><textarea id="bNote" rows="2">${esc(x.note||"")}</textarea></div>
+    <div class="field"><label>Schritte <span id="bpTotal" style="float:right;text-transform:none;color:var(--dim)"></span></label>
+      <div id="bpSteps"></div>
+      <button class="step-add" id="bpAdd">＋ Schritt</button></div>
+    <div class="field"><label>Zielzonen-Skizze (Stunden-Überblick)</label><div id="bCourt"></div></div>
+    <div class="sheet-grp">
+      <button class="sheet-btn primary" id="bSave">${isNew?"Anlegen":"Speichern"}</button>
+      ${isNew?"":'<button class="sheet-btn danger" id="bDel">Löschen</button>'}
+    </div>
+    <button class="sheet-close">Abbrechen</button>`);
+  wireFacets(x);
+  drawSteps();
+  $("#bCourt",sheetPanel).appendChild(courtField(x.court, ()=>{}));
+  $("#bpAdd",sheetPanel).onclick=()=>{ const last=x.items[x.items.length-1]; x.items.push({id:uid(),text:"",group:last?last.group||"":"",durationMin:""}); drawSteps(); $$(".s-txt",sheetPanel).pop()?.focus(); };
+  $("#bSave",sheetPanel).onclick=()=>{
+    const name=$("#bName",sheetPanel).value.trim(); if(!name){ toast("Name fehlt"); return; }
+    x.name=name;
+    x.tags=splitTags($("#bTags",sheetPanel).value);
+    x.note=$("#bNote",sheetPanel).value.trim();
+    x.items=x.items.filter(i=>i.text.trim());
+    x.durationMin=x.items.reduce((n,i)=>n+(+i.durationMin||0),0)||"";
+    if(!x.balls.length) x.balls=["gelb"];
+    if(!x.aud.length) x.aud=["herren"];
+    if(!x.levels.length) x.levels=["mittel"];
+    x.court = (x.court.els && x.court.els.length) ? {els:x.court.els} : null;
+    stamp(x);
+    const i=state.blueprints.findIndex(b=>b.id===x.id);
+    if(i<0) state.blueprints.push(x); else state.blueprints[i]=x;
+    save(); render(); closeSheet(); toast(isNew?"Baustein angelegt":"Gespeichert");
+  };
+  if(!isNew) $("#bDel",sheetPanel).onclick=()=>{
+    if(!confirm("Baustein löschen?")) return;
+    state.tomb.blueprint[x.id]=Date.now();
+    state.blueprints=state.blueprints.filter(y=>y.id!==x.id);
+    save(); render(); closeSheet();
+  };
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+
+function menuSheet(){
+  openSheet(`
+    <h2>Menü</h2>
+    <div class="sub">Übungssammlung (Tennis) · ${CFG.on()?"Cloud aktiv":"lokal auf diesem Gerät"}</div>
+    <div class="sheet-grp">
+      <button class="sheet-btn" data-x="theme"><span class="em">${state.settings.theme==="dark"?"☀️":"🌙"}</span>${state.settings.theme==="dark"?"Helles Design":"Dunkles Design"}</button>
+      <button class="sheet-btn" data-x="name"><span class="em">🙋</span>Dein Name<small>${author()?esc(author()):"wird bei neuen Einträgen vermerkt"}</small></button>
+      <button class="sheet-btn" data-x="cloud"><span class="em">☁️</span>Cloud-Sync<small>${CFG.on()?"aktiv – tippen zum Einstellen":"über GitHub einrichten"}</small></button>
+    </div>
+    <div class="sheet-grp">
+      <button class="sheet-btn" data-x="exp"><span class="em">💾</span>Backup als Datei (.json)</button>
+      <button class="sheet-btn" data-x="imp"><span class="em">📂</span>Backup laden</button>
+      <button class="sheet-btn" data-x="md"><span class="em">📝</span>Als Text (Markdown)</button>
+    </div>
+    <button class="sheet-btn" data-x="tips"><span class="em">💡</span>Aufbau &amp; Zusammenspiel mit dem Trainingsbuch</button>
+    <button class="sheet-close">Schließen</button>`);
+  $$("[data-x]",sheetPanel).forEach(b=>b.onclick=()=>{
+    const x=b.dataset.x;
+    if(x==="theme"){ state.settings.theme=state.settings.theme==="dark"?"light":"dark"; save(); render(); closeSheet(); }
+    else if(x==="name"){ const n=prompt("Dein Name (erscheint bei „von …“):", author()); if(n!=null){ localStorage.setItem("us_author",n.trim()); closeSheet(); render(); } }
+    else if(x==="cloud"){ cloudSheet(); }
+    else if(x==="exp"){ exportJSON(); }
+    else if(x==="imp"){ importJSON(); }
+    else if(x==="md"){ exportMD(); }
+    else if(x==="tips"){ tipsSheet(); }
+  });
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+function tipsSheet(){
+  openSheet(`
+    <h2>Aufbau</h2>
+    <div class="tips">
+      <b>Nur Tennis.</b> Kondition ist raus. Jede Übung / jeder Baustein hat vier Achsen:
+      <ul>
+        <li><b>Typ</b> – Aufwärmen · Korbübung · Übung · Spielform (die Liste ist danach gruppiert).</li>
+        <li><b>Ballstufe</b> – rot · orange · grün · gelb (DTB). Mehrfachauswahl möglich.</li>
+        <li><b>Zielgruppe</b> – Jugend · Herren.</li>
+        <li><b>Spielstärke</b> – Anfänger · Mittel · Hoch.</li>
+      </ul>
+      Dazu freie <b>Schwerpunkte</b> (Vorhand, Aufschlag …) und eine <b>Zielzonen-Skizze</b>: Platz von oben, <b>● Zone</b> setzt nummerierte Zielfelder, <b>↗ Pfeil</b> zeichnet Ballwege (erst Start, dann Ziel tippen), <b>A Text</b> beschriftet, <b>⌫ Löschen</b> entfernt einzeln.
+      <br><br>
+      <b>Filter:</b> Typ und Ball direkt unter der Suche, der Rest hinter „⛃ Filter“.
+      <br><br>
+      <b>Trainingsbuch-App:</b> dort in einer Einheit „📚 aus Sammlung“ – liest diese Datei nur lesend und fügt eine Übung als Punkt oder einen Baustein als Block ein. Deine Planung bleibt privat, geteilt wird nur diese Sammlung.
+    </div>
+    <button class="sheet-close">Schließen</button>`);
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+
+/* ---------- Export / Import ---------- */
+function dl(blob,name){ const u=URL.createObjectURL(blob),a=document.createElement("a"); a.href=u;a.download=name;document.body.appendChild(a);a.click(); setTimeout(()=>{URL.revokeObjectURL(u);a.remove();},400); toast("Datei „"+name+"“ erstellt"); }
+const todayISO=()=>new Date().toISOString().slice(0,10);
+function exportJSON(){ dl(new Blob([JSON.stringify({app:"uebungssammlung",exportedAt:new Date().toISOString(),state})],{type:"application/json"}), "uebungssammlung-"+todayISO()+".json"); closeSheet(); }
+function importJSON(){
+  const inp=document.createElement("input"); inp.type="file"; inp.accept=".json,application/json";
+  inp.onchange=async()=>{ const f=inp.files[0]; if(!f) return;
+    try{ const d=JSON.parse(await f.text()); const inc=d.state||d;
+      if(!inc.exercises && !inc.blueprints) throw 0;
+      if(!confirm("Backup laden? Ersetzt den aktuellen Stand auf diesem Gerät.")) return;
+      state=ensure(inc); save(); render(); closeSheet(); toast("Backup geladen");
+    }catch(e){ alert("Datei konnte nicht gelesen werden."); }
+  };
+  inp.click();
+}
+function exportMD(){
+  const L=["# Übungssammlung (Tennis) — "+todayISO(),""];
+  const facet = x => `_${label(TYPES,x.type)} · Ball: ${x.balls.map(b=>label(BALLS,b)).join("/")} · ${x.aud.map(a=>label(AUD,a)).join("/")} · ${x.levels.map(l=>label(LEVELS,l)).join("/")}${x.tags.length?" · "+x.tags.join(", "):""}_`;
+  L.push("## Einzelübungen","");
+  TYPES.forEach(([tv,tl])=>{
+    const g=state.exercises.filter(e=>e.type===tv).sort((a,b)=>a.name.localeCompare(b.name));
+    if(!g.length) return;
+    L.push("### "+tl,"");
+    g.forEach(e=>{ L.push("**"+e.name+"**"+(e.durationMin?" ("+e.durationMin+"′)":"")); L.push(facet(e));
+      if(e.desc) L.push(e.desc); if(e.court&&e.court.els&&e.court.els.length) L.push("_[Zielzonen-Skizze: "+e.court.els.length+" Elemente]_");
+      if(e.author) L.push("<sub>von "+e.author+"</sub>"); L.push(""); });
+  });
+  L.push("## Stunden-Bausteine","");
+  state.blueprints.slice().sort((a,b)=>a.name.localeCompare(b.name)).forEach(b=>{
+    L.push("### "+b.name+(b.durationMin?" ("+b.durationMin+"′)":"")); L.push(facet(b));
+    if(b.note) L.push("> "+b.note);
+    let g=null;
+    b.items.forEach(i=>{ if((i.group||"")!==(g||"")&&i.group){ L.push("","**"+i.group+"**"); g=i.group; } L.push("- "+i.text+(i.durationMin?" ("+i.durationMin+"′)":"")); });
+    L.push("");
+  });
+  dl(new Blob([L.join("\n")],{type:"text/markdown"}), "uebungssammlung-"+todayISO()+".md");
+  closeSheet();
+}
+
+/* ============================================================
+   Cloud-Sync (GitHub) — Schlüssel us_*
+   ============================================================ */
+const CFG={
+  on:()=>localStorage.getItem("us_cloud_on")==="1",
+  tok:()=>localStorage.getItem("us_gh_tok")||"",
+  user:()=>localStorage.getItem("us_gh_user")||"mattiknp",
+  repo:()=>localStorage.getItem("us_gh_repo")||"routine-tracker",
+  branch:()=>localStorage.getItem("us_gh_branch")||"main",
+  file:()=>localStorage.getItem("us_gh_file")||"uebungssammlung.json",
+  auto:()=>localStorage.getItem("us_cloud_auto")!=="0",
+};
+const cfgSet=(k,v)=>localStorage.setItem(k,v);
+const b64enc=s=>btoa(unescape(encodeURIComponent(s)));
+const b64dec=s=>decodeURIComponent(escape(atob(String(s).replace(/\s/g,""))));
+const ghHead=()=>({Authorization:"token "+CFG.tok(),Accept:"application/vnd.github+json"});
+const ghUrl=p=>"https://api.github.com/repos/"+CFG.user()+"/"+CFG.repo()+"/contents/"+p.split("/").map(encodeURIComponent).join("/");
+async function ghGet(p){
+  const r=await fetch(ghUrl(p)+"?ref="+encodeURIComponent(CFG.branch())+"&t="+Date.now(),{headers:ghHead(),cache:"no-store"});
+  if(r.status===404) return null;
+  if(r.status===401||r.status===403) throw new Error("Token abgelehnt ("+r.status+")");
+  if(!r.ok) throw new Error("GitHub "+r.status);
+  return r.json();
+}
+async function ghPut(p,b64,sha,msg){
+  const body={message:msg||("uebungssammlung "+new Date().toISOString()),content:b64,branch:CFG.branch()};
+  if(sha) body.sha=sha;
+  const r=await fetch(ghUrl(p),{method:"PUT",headers:{...ghHead(),"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(r.status===409){ const e=new Error("conflict"); e.conflict=true; throw e; }
+  if(!r.ok) throw new Error("GitHub "+r.status+" (schreiben)");
+  return r.json();
+}
+function pruneTomb(t){ const cut=Date.now()-90*864e5; for(const g of Object.values(t)) for(const id of Object.keys(g)) if(g[id]<cut) delete g[id]; return t; }
+function mergeTomb(a={},b={}){ const o={exercise:{},blueprint:{}}; for(const g of Object.keys(o)){ const m={...(a[g]||{})}; for(const [id,ts] of Object.entries(b[g]||{})) m[id]=Math.max(ts,m[id]||0); o[g]=m; } return o; }
+function mergeList(a=[],b=[],tomb={}){
+  const m=new Map();
+  for(const x of [...a,...b]){ const p=m.get(x.id); if(!p || (x.updatedAt||0) > (p.updatedAt||0)) m.set(x.id,x); }
+  for(const [id,ts] of Object.entries(tomb)){ const e=m.get(id); if(e && (e.updatedAt||0) <= ts) m.delete(id); }
+  return [...m.values()];
+}
+function mergeState(local,remote){
+  const tomb=pruneTomb(mergeTomb(local.tomb,remote.tomb));
+  return ensure({ v:2, settings:local.settings, tomb,
+    exercises:mergeList(local.exercises,remote.exercises,tomb.exercise),
+    blueprints:mergeList(local.blueprints,remote.blueprints,tomb.blueprint) });
+}
+const stripForCloud=s=>{ const {settings,...rest}=s; return rest; };
+
+let syncing=false, syncT=null, remoteSha=null;
+function setDot(s,txt){ const el=$("#syncDot"); if(el){ el.dataset.s=s; el.title=txt||""; } }
+function queueCloud(){ try{ if(!CFG.on()||!CFG.auto()) return; }catch(e){ return; } clearTimeout(syncT); syncT=setTimeout(()=>syncNow(false),3000); }
+async function syncNow(manual){
+  if(!CFG.on()){ if(manual) toast("Cloud ist aus"); return; }
+  if(!CFG.tok()){ if(manual) toast("Kein Token hinterlegt"); return; }
+  if(syncing) return; syncing=true; setDot("busy","Gleicht ab …");
+  try{
+    let remoteObj=null;
+    const rf=await ghGet(CFG.file());
+    if(rf && rf.content){ try{ remoteObj=ensure(JSON.parse(b64dec(rf.content))); }catch(e){} remoteSha=rf.sha; }
+    else if(rf){ remoteSha=rf.sha; }
+    if(remoteObj) state=mergeState(state,remoteObj);
+    save_silent=true; save(); save_silent=false;
+    const outStr=JSON.stringify(stripForCloud(state));
+    const remoteStr=remoteObj?JSON.stringify(stripForCloud(remoteObj)):null;
+    if(outStr!==remoteStr){
+      try{ const res=await ghPut(CFG.file(),b64enc(outStr),remoteSha,"uebungssammlung "+new Date().toISOString()); remoteSha=res.content.sha; }
+      catch(e){
+        if(e.conflict){
+          const rf2=await ghGet(CFG.file());
+          const r2=rf2&&rf2.content?ensure(JSON.parse(b64dec(rf2.content))):null;
+          if(r2){ state=mergeState(state,r2); save_silent=true;save();save_silent=false; }
+          const res2=await ghPut(CFG.file(),b64enc(JSON.stringify(stripForCloud(state))),rf2&&rf2.sha,"uebungssammlung merge"); remoteSha=res2.content.sha;
+        } else throw e;
+      }
+    }
+    localStorage.setItem("us_cloud_last",Date.now()+"");
+    setDot("ok","Synchron · "+new Date().toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}));
+    render(); if(manual) toast("Abgeglichen");
+  }catch(e){ console.warn(e); setDot("err",e.message||"Fehler"); if(manual) toast("Sync-Fehler: "+(e.message||e)); }
+  finally{ syncing=false; }
+}
+function cloudInit(){
+  setDot(CFG.on()?"idle":"off", CFG.on()?"Cloud bereit":"Cloud aus");
+  if(CFG.on()) syncNow(false);
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden && CFG.on() && CFG.auto()) syncNow(false); });
+  window.addEventListener("online",()=>{ if(CFG.on()) syncNow(false); });
+}
+function cloudSheet(){
+  const last=+localStorage.getItem("us_cloud_last")||0;
+  openSheet(`
+    <h2>Cloud-Sync</h2>
+    <div class="sub">Legt <code>${esc(CFG.file())}</code> in ein GitHub-Repo und gleicht nach jeder Änderung ab. Pro Eintrag gewinnt der neuere Stand; Gelöschtes bleibt 90 Tage vermerkt.</div>
+    <div class="field"><label>GitHub-Token (Fine-grained, Contents: Read and write)</label><input id="cfTok" type="password" autocomplete="off" value="${esc(CFG.tok())}" placeholder="github_pat_…"></div>
+    <div class="field"><label>Benutzer / Owner</label><input id="cfUser" value="${esc(CFG.user())}"></div>
+    <div class="field"><label>Repository</label><input id="cfRepo" value="${esc(CFG.repo())}"></div>
+    <div class="field"><label>Branch</label><input id="cfBranch" value="${esc(CFG.branch())}"></div>
+    <div class="field"><label>Dateiname</label><input id="cfFile" value="${esc(CFG.file())}"></div>
+    <div class="toggle-row"><input type="checkbox" id="cfAuto" ${CFG.auto()?"checked":""}><label for="cfAuto">Automatisch abgleichen</label></div>
+    <div class="sheet-grp">
+      <button class="sheet-btn primary" id="cfSave">Speichern &amp; einschalten</button>
+      <button class="sheet-btn" id="cfSync" style="justify-content:center">Jetzt abgleichen</button>
+      <button class="sheet-btn danger" id="cfOff">Sync ausschalten</button>
+    </div>
+    <div class="cf-status">${CFG.on()?"Status: aktiv":"Status: aus"}${last?" · zuletzt "+new Date(last).toLocaleString("de-DE"):""}</div>
+    <div class="tips">
+      <b>Token anlegen</b>
+      <ul>
+        <li>GitHub → Settings → Developer settings → <b>Fine-grained tokens</b> → Generate.</li>
+        <li>Repository access: <b>Only select repositories</b> → dein Repo.</li>
+        <li>Permissions → Repository → <b>Contents: Read and write</b>.</li>
+      </ul>
+      <div style="color:var(--faint)">Damit alle Trainer mitschreiben können, braucht jeder einen eigenen solchen Token auf dasselbe Repo. Nur-Lesen (Trainingsbuch-App) reicht <b>Contents: Read</b> – bei einem öffentlichen Repo sogar ganz ohne Token.</div>
+    </div>
+    <button class="sheet-close">Schließen</button>`);
+  const store=()=>{ cfgSet("us_gh_tok",$("#cfTok",sheetPanel).value.trim()); cfgSet("us_gh_user",$("#cfUser",sheetPanel).value.trim());
+    cfgSet("us_gh_repo",$("#cfRepo",sheetPanel).value.trim()); cfgSet("us_gh_branch",$("#cfBranch",sheetPanel).value.trim()||"main");
+    cfgSet("us_gh_file",$("#cfFile",sheetPanel).value.trim()||"uebungssammlung.json"); cfgSet("us_cloud_auto",$("#cfAuto",sheetPanel).checked?"1":"0"); };
+  $("#cfSave",sheetPanel).onclick=()=>{ store(); cfgSet("us_cloud_on","1"); closeSheet(); setDot("busy","…"); toast("Cloud aktiv"); syncNow(true); };
+  $("#cfSync",sheetPanel).onclick=()=>{ store(); cfgSet("us_cloud_on","1"); syncNow(true); };
+  $("#cfOff",sheetPanel).onclick=()=>{ cfgSet("us_cloud_on","0"); setDot("off","Aus"); toast("Sync aus"); closeSheet(); };
+  $(".sheet-close",sheetPanel).onclick=closeSheet;
+}
+
+/* ---------- Events ---------- */
+$("#syncDot").onclick=cloudSheet;
+$("#menuBtn").onclick=menuSheet;
+$("#filterBtn").onclick=filterSheet;
+$("#tabs").onclick=e=>{ const b=e.target.closest("button"); if(!b) return; state.settings.view=b.dataset.v; save(); render(); };
+$("#search").oninput=render;
+$("#searchClear").onclick=()=>{ $("#search").value=""; render(); };
+$("#addBtn").onclick=()=>{ state.settings.view==="blueprints" ? bpEditor(null) : exEditor(null); };
+
+render();
+cloudInit();
+</script>
+</body>
+</html>
