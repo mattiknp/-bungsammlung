@@ -821,15 +821,17 @@ async function syncNow(manual){
   try{
     let remoteObj=null;
     const rf=await ghGet(CFG.file());
-    if(rf && rf.content){ try{ remoteObj=ensure(JSON.parse(b64dec(rf.content))); }catch(e){} remoteSha=rf.sha; }
-    else if(rf){ remoteSha=rf.sha; }
-    if(remoteObj && isEditing()){ resyncPending=true; }
+    if(rf && rf.content){ try{ remoteObj=ensure(JSON.parse(b64dec(rf.content))); }catch(e){ throw new Error("Cloud-Datei nicht lesbar – nichts überschrieben"); } remoteSha=rf.sha; }
+    else if(rf){ throw new Error("Cloud-Datei konnte nicht gelesen werden – nichts überschrieben"); }
+    if(remoteObj && !manual && isEditing()){ resyncPending=true; setDot("idle","Wartet …"); return; }
     else if(remoteObj){
       const bx=JSON.stringify(state.exercises.map(e=>e.id))+JSON.stringify(state.blueprints.map(e=>e.id));
       state=mergeState(state,remoteObj);
       if(bx!==JSON.stringify(state.exercises.map(e=>e.id))+JSON.stringify(state.blueprints.map(e=>e.id))) changed=true;
     }
     save_silent=true; save(); save_silent=false;
+    const cnt=o=>(o.exercises||[]).length+(o.blueprints||[]).length;
+    if(remoteObj && cnt(remoteObj)>0 && cnt(state)===0) throw new Error("Abbruch: lokal leer, Cloud nicht – nichts überschrieben");
     const outStr=JSON.stringify(stripForCloud(state));
     const remoteStr=remoteObj?JSON.stringify(stripForCloud(remoteObj)):null;
     if(outStr!==remoteStr){
@@ -838,7 +840,8 @@ async function syncNow(manual){
         if(e.conflict){
           const rf2=await ghGet(CFG.file());
           const r2=rf2&&rf2.content?ensure(JSON.parse(b64dec(rf2.content))):null;
-          if(r2 && !isEditing()){ state=mergeState(state,r2); changed=true; save_silent=true;save();save_silent=false; }
+          if(r2 && !manual && isEditing()){ resyncPending=true; setDot("idle","Wartet …"); return; }
+          if(r2){ state=mergeState(state,r2); changed=true; save_silent=true;save();save_silent=false; }
           const res2=await ghPut(CFG.file(),b64enc(JSON.stringify(stripForCloud(state))),rf2&&rf2.sha,"uebungssammlung merge"); remoteSha=res2.content.sha;
         } else throw e;
       }
